@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(uuid())
+  username String @unique
+  password String
+}
+
+model Product {
+  id String @id @default(cuid())
+  name String @unique
+  desc String
+  image_url String
+  category String
+  price Int
+  stock Int
+  transactions_items TransactionsItem[]
+
+  @@map("products")
+}
+
+model Transaction {
+  id                 String              @id 
+  total              Int
+  status             transactions_status
+  customer_name      String             
+  customer_email     String             
+  snap_token         String?            
+  snap_redirect_url  String?            
+  payment_method     String?             
+  created_at         DateTime?           @default(now())
+  updated_at         DateTime?           @default(now())
+  transactions_items TransactionsItem[]
+
+  @@map("transactions")
+}
+
+model TransactionsItem {
+  id             String      @id 
+  transaction_id String      
+  product_id     String      
+  product_name   String     
+  price          Int
+  quantity       Int
+  created_at     DateTime?   @default(now())
+  updated_at     DateTime?   @default(now())
+  transactions   Transaction @relation(fields: [transaction_id], references: [id], onUpdate: Restrict, map: "transactions_items_ibfk_1")
+  products       Product     @relation(fields: [product_id], references: [id], onUpdate: Restrict, map: "transactions_items_ibfk_2")
+
+  @@index([product_id], map: "product_id")
+  @@index([transaction_id], map: "transaction_id")
+  @@map("transactions_items")
+}
+
+enum transactions_status {
+  PENDING_PAYMENT
+  PAID
+  CANCELED
+}
